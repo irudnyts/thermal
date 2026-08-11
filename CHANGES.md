@@ -1,5 +1,15 @@
 # Implementation log
 
+## Fix FFmpeg 8.1.2 configure options
+
+- **Commit:** `Fix FFmpeg 8.1.2 configure options`
+- **Intent:** Correct the manual dependency build after FFmpeg rejected an obsolete configure option.
+- **What changed:** Removed `--disable-postproc` from the FFmpeg build helper because FFmpeg 8.1.2 no longer provides the libpostproc component or its configure switch.
+- **Important implementation details:** The remaining minimal-build switches are unchanged; libpostproc was already absent from FFmpeg 8.1.2, so removing its disable switch does not add functionality to the output.
+- **Verification performed:** The helper passed `bash -n`. FFmpeg's configure phase succeeded for both arm64 iPhone and Simulator targets with exactly the intended libraries and components enabled. The Stream Debug build and all three tests also passed on the iPhone 13 Pro Simulator running iOS 26.5.
+- **Known limitations:** The XCFramework still needs to be built by rerunning the manual dependency checkpoint.
+- **Relevant Swift concepts:** None; this is a shell build-helper correction.
+
 ## Add reproducible iOS FFmpeg build helper
 
 - **Commit:** `Add reproducible iOS FFmpeg build helper`

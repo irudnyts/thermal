@@ -65,7 +65,6 @@ build_slice() {
         --disable-nonfree \
         --disable-avdevice \
         --disable-avfilter \
-        --disable-postproc \
         --disable-swresample \
         --disable-encoders \
         --disable-muxers \
