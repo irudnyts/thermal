@@ -1,5 +1,15 @@
 # Implementation log
 
+## Link FFmpeg decoding framework
+
+- **Commit:** `Link FFmpeg decoding framework`
+- **Intent:** Make the manually generated FFmpeg 8.1.2 libraries available to Stream before adding decoding code.
+- **What changed:** Linked the static FFmpeg XCFramework to the app target and added a smoke test that calls FFmpeg's version API through a small Swift wrapper.
+- **Important implementation details:** The XCFramework supplies separate arm64 slices for physical iPhones and Apple-silicon Simulators. Because it contains static libraries, it is linked but not embedded in the application bundle. Its generated module uses a narrow umbrella header so Swift does not scan unrelated platform-specific FFmpeg headers.
+- **Verification performed:** The Debug build and all four tests passed on the iPhone 13 Pro Simulator running iOS 26.5, including an exact `8.1.2` version assertion. An unsigned Debug build also succeeded for the generic physical-iPhone destination.
+- **Known limitations:** This checkpoint proves linkage only; it does not open UDP input or decode frames.
+- **Relevant Swift concepts:** A module import exposes FFmpeg's C functions directly to Swift. `String(cString:)` converts FFmpeg's null-terminated version string into a Swift `String`.
+
 ## Fix FFmpeg 8.1.2 configure options
 
 - **Commit:** `Fix FFmpeg 8.1.2 configure options`

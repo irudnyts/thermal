@@ -13,4 +13,8 @@ final class StreamTests: XCTestCase {
 
         XCTAssertEqual(orientations, ["UIInterfaceOrientationPortrait"])
     }
+
+    func testFFmpegVersion() {
+        XCTAssertEqual(FFmpegVersion.string, "8.1.2")
+    }
 }

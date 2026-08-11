@@ -100,8 +100,17 @@ build_slice() {
 
     cp -R "$install_directory/include/." "$slice_directory/Headers/"
     printf '%s\n' \
+        '#include <libavcodec/avcodec.h>' \
+        '#include <libavformat/avformat.h>' \
+        '#include <libavutil/avutil.h>' \
+        '#include <libavutil/error.h>' \
+        '#include <libavutil/frame.h>' \
+        '#include <libavutil/time.h>' \
+        '#include <libswscale/swscale.h>' \
+        > "$slice_directory/Headers/FFmpeg.h"
+    printf '%s\n' \
         'module FFmpeg [system] {' \
-        '    umbrella "."' \
+        '    umbrella header "FFmpeg.h"' \
         '    export *' \
         '}' > "$slice_directory/Headers/module.modulemap"
 }

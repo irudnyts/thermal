@@ -12,6 +12,8 @@
 		A20000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000003 /* Assets.xcassets */; };
 		A20000000000000000000004 /* StreamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000004 /* StreamTests.swift */; };
 		A20000000000000000000005 /* StreamUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000005 /* StreamUITests.swift */; };
+		A20000000000000000000006 /* FFmpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000000000000000000009 /* FFmpeg.xcframework */; };
+		A20000000000000000000007 /* FFmpegVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000010 /* FFmpegVersion.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,6 +42,8 @@
 		A30000000000000000000006 /* Stream.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Stream.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A30000000000000000000007 /* StreamTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StreamTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A30000000000000000000008 /* StreamUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StreamUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A30000000000000000000009 /* FFmpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Vendor/FFmpeg/FFmpeg.xcframework; sourceTree = "<group>"; };
+		A30000000000000000000010 /* FFmpegVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegVersion.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,6 +51,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A20000000000000000000006 /* FFmpeg.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -73,6 +78,7 @@
 				A70000000000000000000002 /* Stream */,
 				A70000000000000000000003 /* StreamTests */,
 				A70000000000000000000004 /* StreamUITests */,
+				A30000000000000000000009 /* FFmpeg.xcframework */,
 				A70000000000000000000005 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -82,6 +88,7 @@
 			children = (
 				A30000000000000000000001 /* StreamApp.swift */,
 				A30000000000000000000002 /* ContentView.swift */,
+				A30000000000000000000010 /* FFmpegVersion.swift */,
 				A30000000000000000000003 /* Assets.xcassets */,
 			);
 			path = Stream;
@@ -243,6 +250,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A20000000000000000000002 /* ContentView.swift in Sources */,
+				A20000000000000000000007 /* FFmpegVersion.swift in Sources */,
 				A20000000000000000000001 /* StreamApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
