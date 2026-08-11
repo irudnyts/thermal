@@ -1,5 +1,15 @@
 # Implementation log
 
+## Decode H264 MPEG-TS video frames
+
+- **Commit:** `Decode H264 MPEG-TS video frames`
+- **Intent:** Provide a cancellable internal decoder that turns the fixed H.264/MPEG-TS input into display-ready images.
+- **What changed:** Added an Objective-C FFmpeg bridge, Swift bridging header, a deterministic 640×480 MPEG-TS fixture, and tests for successful decoding, invalid input, and cancellation.
+- **Important implementation details:** Decoding runs on a private serial queue. FFmpeg interrupt deadlines bound blocking opens and reads, malformed packets are skipped, all C resources have one cleanup path, UDP failures retry after a short delay, and a dispatch source coalesces pending output so only the newest BGRA `CGImage` reaches the main queue.
+- **Verification performed:** The Debug build and all seven tests passed on the iPhone 13 Pro Simulator running iOS 26.5, including 640×480 decoding, invalid-input, and cancellation coverage. An unsigned Debug build and Xcode static analysis also succeeded for the generic physical-iPhone destination with no compiler warnings.
+- **Known limitations:** The decoder is not connected to the SwiftUI screen yet. UDP port 5000 will be fixed by the stream model in the next checkpoint.
+- **Relevant Swift concepts:** The bridging header exposes one Objective-C class to Swift. Callbacks cross back to the main queue so later UI state can be updated safely.
+
 ## Link FFmpeg decoding framework
 
 - **Commit:** `Link FFmpeg decoding framework`
