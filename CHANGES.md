@@ -1,5 +1,15 @@
 # Implementation log
 
+## Use iPhone 13 Pro as reference device
+
+- **Commit:** `Use iPhone 13 Pro as reference device`
+- **Intent:** Make iPhone 13 Pro the standard Simulator used to verify Stream without limiting normal iPhone compatibility.
+- **What changed:** Updated the application README to name iPhone 13 Pro as the reference and run destination.
+- **Important implementation details:** Xcode targets the iPhone device family rather than an individual model, so the project continues to support every iPhone running iOS 17 or newer.
+- **Verification performed:** Built Stream and ran both unit and UI tests on the iPhone 13 Pro Simulator running iOS 26.5; both tests passed.
+- **Known limitations:** The locally available iPhone 13 Pro profile runs iOS 26.5 because that is the installed Simulator runtime.
+- **Relevant Swift concepts:** None; this change affects only the documented development destination.
+
 ## Initialize Stream iOS project
 
 - **Commit:** `Initialize Stream iOS project`
