@@ -14,6 +14,14 @@ final class StreamTests: XCTestCase {
         XCTAssertEqual(orientations, ["UIInterfaceOrientationPortrait"])
     }
 
+    func testLocalNetworkUsageDescriptionIsPresent() throws {
+        let description = try XCTUnwrap(
+            Bundle.main.object(forInfoDictionaryKey: "NSLocalNetworkUsageDescription") as? String
+        )
+
+        XCTAssertFalse(description.isEmpty)
+    }
+
     func testFFmpegVersion() {
         XCTAssertEqual(FFmpegVersion.string, "8.1.2")
     }
@@ -73,5 +81,20 @@ final class StreamTests: XCTestCase {
 
         XCTAssertLessThan(start.duration(to: .now), .seconds(1))
         XCTAssertFalse(decoder.isRunning)
+    }
+
+    func testCameraStreamModelStartsAndStops() async {
+        await MainActor.run {
+            let model = CameraStreamModel()
+
+            XCTAssertEqual(model.state, .stopped)
+            model.start()
+            XCTAssertEqual(model.state, .listening)
+            XCTAssertEqual(model.statusText, "Listening on UDP 5000")
+
+            model.stop()
+            XCTAssertEqual(model.state, .stopped)
+            XCTAssertNil(model.frame)
+        }
     }
 }

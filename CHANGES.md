@@ -1,5 +1,15 @@
 # Implementation log
 
+## Display and manage the primary UDP stream
+
+- **Commit:** `Display and manage the primary UDP stream`
+- **Intent:** Connect the decoder to the portrait UI and make stream ownership follow the application lifecycle.
+- **What changed:** Added the observable camera model, rendered decoded frames aspect-fit in the upper pane, exposed listening/playing/reconnecting/error text, kept the lower pane black, added the local-network purpose string, and documented physical-iPhone operation.
+- **Important implementation details:** The model fixes the v1 endpoint at `udp://0.0.0.0:5000`, owns the decoder and latest frame, and clears stale images when stopped or restarted. SwiftUI starts reception only while the scene is active and stops it after the scene enters the background.
+- **Verification performed:** The Debug build and all nine tests passed on the iPhone 13 Pro Simulator running iOS 26.5. An unsigned generic-iPhone build succeeded, and its generated Info.plist contains the expected bundle ID, portrait orientation, and local-network explanation. A local end-to-end run sent the 640×480 MPEG-TS fixture over UDP 5000 and visually confirmed the upper pane rendered it in the playing state while the lower pane stayed black.
+- **Known limitations:** Raspberry Pi-to-physical-iPhone verification still requires the user's hardware. Audio, recording, settings, a secondary receiver, and background reception remain out of scope.
+- **Relevant Swift concepts:** `ObservableObject` and `@Published` notify SwiftUI when the frame or state changes. `@StateObject` keeps the model alive across view redraws, while `scenePhase` reports foreground/background transitions.
+
 ## Decode H264 MPEG-TS video frames
 
 - **Commit:** `Decode H264 MPEG-TS video frames`

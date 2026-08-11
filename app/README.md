@@ -1,11 +1,13 @@
 # Stream
 
-Stream is an iPhone application that will display an H.264/MPEG-TS camera stream received over UDP. It currently shows two portrait camera placeholders; the upper pane is reserved for the primary stream and the lower pane for a future secondary camera.
+Stream is an iPhone application that displays a 640×480 H.264/MPEG-TS camera stream received on UDP port 5000. The decoded primary stream is shown aspect-fit in the upper pane; the lower pane remains black and reserved for a future secondary camera.
 
 ## Requirements
 
 - macOS with Xcode 26.6 or another Xcode version capable of targeting iOS 17
 - An iPhone 13 Pro Simulator running iOS 17 or newer for reference-device testing
+- An iPhone running iOS 17 or newer and an Apple account for device signing
+- The existing Raspberry Pi camera sender on the same Wi-Fi network as the iPhone
 
 Install Xcode from the Mac App Store or [Apple Developer downloads](https://developer.apple.com/download/all/), open it once, accept its license, and allow it to install the iOS platform components. The FFmpeg helper uses only tools supplied by macOS and Xcode: `clang`, the iOS SDKs, `curl`, `make`, and `tar`. Homebrew and CocoaPods are not required.
 
@@ -44,4 +46,24 @@ Expected output:
 Created app/Vendor/FFmpeg/FFmpeg.xcframework
 ```
 
-The Xcode project does not link this output yet. After the command finishes, confirm the generated framework exists before continuing to the linking checkpoint.
+The Xcode project links this generated framework as a static library. Re-run the helper whenever the ignored `Vendor/FFmpeg/FFmpeg.xcframework` directory is missing.
+
+## Run with the Raspberry Pi
+
+1. Open `/Users/irudnyts/Documents/projects/thermal/app/Stream.xcodeproj` in Xcode.
+2. Select the `Stream` target, open **Signing & Capabilities**, and choose your Personal Team.
+3. Connect the iPhone to the Mac, enable Developer Mode when prompted, and select that iPhone as Xcode's run destination.
+4. On the iPhone, open **Settings > Wi-Fi**, tap the information button beside the connected network, and note the iPhone's IPv4 address.
+5. Configure `collect/.env` on the Raspberry Pi:
+
+   ```text
+   MAC_IP=<iphone-wifi-ip>
+   PORT=5000
+   ```
+
+6. Run Stream from Xcode. Accept the Local Network permission prompt and leave the app active.
+7. Start `collect/camera_sender.py` using the sender's existing Python environment.
+
+The upper pane should move through listening or reconnecting to playing and show video within approximately three seconds. Stream stops its receiver when sent to the background and starts listening again when it becomes active. The lower pane remains black.
+
+If no video appears, confirm both devices are on the same Wi-Fi network, recheck the iPhone address in `collect/.env`, verify UDP port 5000 is not blocked, and start the app before the sender.

@@ -16,6 +16,7 @@
 		A20000000000000000000007 /* FFmpegVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000010 /* FFmpegVersion.swift */; };
 		A20000000000000000000008 /* FFmpegVideoDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000012 /* FFmpegVideoDecoder.m */; };
 		A20000000000000000000009 /* test_640x480.ts in Resources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000014 /* test_640x480.ts */; };
+		A20000000000000000000010 /* CameraStreamModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000015 /* CameraStreamModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -50,6 +51,7 @@
 		A30000000000000000000012 /* FFmpegVideoDecoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FFmpegVideoDecoder.m; sourceTree = "<group>"; };
 		A30000000000000000000013 /* Stream-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Stream-Bridging-Header.h"; sourceTree = "<group>"; };
 		A30000000000000000000014 /* test_640x480.ts */ = {isa = PBXFileReference; lastKnownFileType = file; path = Fixtures/test_640x480.ts; sourceTree = "<group>"; };
+		A30000000000000000000015 /* CameraStreamModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraStreamModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -94,6 +96,7 @@
 			children = (
 				A30000000000000000000001 /* StreamApp.swift */,
 				A30000000000000000000002 /* ContentView.swift */,
+				A30000000000000000000015 /* CameraStreamModel.swift */,
 				A30000000000000000000010 /* FFmpegVersion.swift */,
 				A30000000000000000000011 /* FFmpegVideoDecoder.h */,
 				A30000000000000000000012 /* FFmpegVideoDecoder.m */,
@@ -261,6 +264,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A20000000000000000000002 /* ContentView.swift in Sources */,
+				A20000000000000000000010 /* CameraStreamModel.swift in Sources */,
 				A20000000000000000000008 /* FFmpegVideoDecoder.m in Sources */,
 				A20000000000000000000007 /* FFmpegVersion.swift in Sources */,
 				A20000000000000000000001 /* StreamApp.swift in Sources */,
@@ -413,6 +417,7 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Stream receives an H.264 camera video stream over UDP from a device on your local network.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -442,6 +447,7 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Stream receives an H.264 camera video stream over UDP from a device on your local network.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
