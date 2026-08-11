@@ -1,5 +1,15 @@
 # Implementation log
 
+## Add portrait camera placeholders
+
+- **Commit:** `Add portrait camera placeholders`
+- **Intent:** Establish the portrait-only two-camera layout before introducing video decoding.
+- **What changed:** Replaced the launch label with two equal, full-width 4:3 black panes, added the primary-stream listening status, locked the app to portrait, and added unit and UI coverage for the orientation and layout.
+- **Important implementation details:** The two panes are stacked without spacing at the top of the screen. Stable accessibility identifiers make the status and pane geometry observable to UI tests.
+- **Verification performed:** Built the Debug configuration and ran two unit tests plus one layout UI test on the iPhone 13 Pro Simulator running iOS 26.5; all three passed.
+- **Known limitations:** Both panes are placeholders. The upper pane does not receive video yet, and the lower pane is intentionally reserved and black.
+- **Relevant Swift concepts:** A small private SwiftUI `View` keeps the repeated camera-pane layout in one place. `aspectRatio` preserves the required 4:3 shape as the phone width changes.
+
 ## Use iPhone 13 Pro as reference device
 
 - **Commit:** `Use iPhone 13 Pro as reference device`

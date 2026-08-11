@@ -5,4 +5,12 @@ final class StreamTests: XCTestCase {
     func testBundleIdentifier() {
         XCTAssertEqual(Bundle.main.bundleIdentifier, "com.irudnyts.stream")
     }
+
+    func testPortraitIsTheOnlySupportedOrientation() {
+        let orientations = Bundle.main.object(
+            forInfoDictionaryKey: "UISupportedInterfaceOrientations"
+        ) as? [String]
+
+        XCTAssertEqual(orientations, ["UIInterfaceOrientationPortrait"])
+    }
 }
