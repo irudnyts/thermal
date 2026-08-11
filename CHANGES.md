@@ -1,5 +1,15 @@
 # Implementation log
 
+## Configure the Apple development team
+
+- **Commit:** `Configure the Apple development team`
+- **Intent:** Let Xcode automatically sign Stream for development with the selected Apple developer account.
+- **What changed:** Set development team `YNDPP33A7W` for the app target's Debug and Release configurations. Xcode also refreshed the displayed project-reference labels for the vendored FFmpeg XCFramework and the MPEG-TS test fixture without changing their paths or build-phase membership.
+- **Important implementation details:** Automatic signing remains enabled, the bundle identifier remains `com.irudnyts.stream`, FFmpeg remains linked from `Vendor/FFmpeg/FFmpeg.xcframework`, and `Fixtures/test_640x480.ts` remains copied into the test bundle as a resource.
+- **Verification performed:** The Debug build and all eight unit tests plus the camera-layout UI test passed on the iPhone 13 Pro Simulator running iOS 26.5. Xcode emitted a debugger-version-store warning that did not affect the successful test run.
+- **Known limitations:** Xcode now classifies the MPEG-TS fixture's `.ts` extension as TypeScript in project metadata. It remains a resource, so this affects Xcode's file presentation rather than the test bundle's behavior.
+- **Relevant Swift concepts:** None; this change affects Xcode project metadata and code signing.
+
 ## Display and manage the primary UDP stream
 
 - **Commit:** `Display and manage the primary UDP stream`

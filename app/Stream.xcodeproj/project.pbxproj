@@ -12,10 +12,10 @@
 		A20000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000003 /* Assets.xcassets */; };
 		A20000000000000000000004 /* StreamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000004 /* StreamTests.swift */; };
 		A20000000000000000000005 /* StreamUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000005 /* StreamUITests.swift */; };
-		A20000000000000000000006 /* FFmpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000000000000000000009 /* FFmpeg.xcframework */; };
+		A20000000000000000000006 /* Vendor/FFmpeg/FFmpeg.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = A30000000000000000000009 /* Vendor/FFmpeg/FFmpeg.xcframework */; };
 		A20000000000000000000007 /* FFmpegVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000010 /* FFmpegVersion.swift */; };
 		A20000000000000000000008 /* FFmpegVideoDecoder.m in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000012 /* FFmpegVideoDecoder.m */; };
-		A20000000000000000000009 /* test_640x480.ts in Resources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000014 /* test_640x480.ts */; };
+		A20000000000000000000009 /* Fixtures/test_640x480.ts in Resources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000014 /* Fixtures/test_640x480.ts */; };
 		A20000000000000000000010 /* CameraStreamModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A30000000000000000000015 /* CameraStreamModel.swift */; };
 /* End PBXBuildFile section */
 
@@ -45,12 +45,12 @@
 		A30000000000000000000006 /* Stream.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Stream.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A30000000000000000000007 /* StreamTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StreamTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A30000000000000000000008 /* StreamUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StreamUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A30000000000000000000009 /* FFmpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Vendor/FFmpeg/FFmpeg.xcframework; sourceTree = "<group>"; };
+		A30000000000000000000009 /* Vendor/FFmpeg/FFmpeg.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = Vendor/FFmpeg/FFmpeg.xcframework; sourceTree = "<group>"; };
 		A30000000000000000000010 /* FFmpegVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FFmpegVersion.swift; sourceTree = "<group>"; };
 		A30000000000000000000011 /* FFmpegVideoDecoder.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = FFmpegVideoDecoder.h; sourceTree = "<group>"; };
 		A30000000000000000000012 /* FFmpegVideoDecoder.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = FFmpegVideoDecoder.m; sourceTree = "<group>"; };
 		A30000000000000000000013 /* Stream-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Stream-Bridging-Header.h"; sourceTree = "<group>"; };
-		A30000000000000000000014 /* test_640x480.ts */ = {isa = PBXFileReference; lastKnownFileType = file; path = Fixtures/test_640x480.ts; sourceTree = "<group>"; };
+		A30000000000000000000014 /* Fixtures/test_640x480.ts */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.typescript; path = Fixtures/test_640x480.ts; sourceTree = "<group>"; };
 		A30000000000000000000015 /* CameraStreamModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraStreamModel.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -59,7 +59,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A20000000000000000000006 /* FFmpeg.xcframework in Frameworks */,
+				A20000000000000000000006 /* Vendor/FFmpeg/FFmpeg.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -86,7 +86,7 @@
 				A70000000000000000000002 /* Stream */,
 				A70000000000000000000003 /* StreamTests */,
 				A70000000000000000000004 /* StreamUITests */,
-				A30000000000000000000009 /* FFmpeg.xcframework */,
+				A30000000000000000000009 /* Vendor/FFmpeg/FFmpeg.xcframework */,
 				A70000000000000000000005 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -110,7 +110,7 @@
 			isa = PBXGroup;
 			children = (
 				A30000000000000000000004 /* StreamTests.swift */,
-				A30000000000000000000014 /* test_640x480.ts */,
+				A30000000000000000000014 /* Fixtures/test_640x480.ts */,
 			);
 			path = StreamTests;
 			sourceTree = "<group>";
@@ -245,7 +245,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A20000000000000000000009 /* test_640x480.ts in Resources */,
+				A20000000000000000000009 /* Fixtures/test_640x480.ts in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -412,12 +412,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YNDPP33A7W;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Stream receives an H.264 camera video stream over UDP from a device on your local network.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Stream receives an H.264 camera video stream over UDP from a device on your local network.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -428,8 +429,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.irudnyts.stream;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_OBJC_BRIDGING_HEADER = "Stream/Stream-Bridging-Header.h";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Stream/Stream-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
@@ -442,12 +443,13 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = YNDPP33A7W;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Stream receives an H.264 camera video stream over UDP from a device on your local network.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Stream receives an H.264 camera video stream over UDP from a device on your local network.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -458,8 +460,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.irudnyts.stream;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_OBJC_BRIDGING_HEADER = "Stream/Stream-Bridging-Header.h";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "Stream/Stream-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
