@@ -1,0 +1,4 @@
+av==18.1.0
+picamera2==0.3.37
+python-dotenv==1.2.3
+videodev2==0.0.4
