@@ -1,5 +1,15 @@
 # Implementation log
 
+## Send capture commands from iPhone taps
+
+- **Commit:** `Send capture commands from iPhone taps`
+- **Intent:** Let the user request an overlay-free synchronized capture by tapping anywhere on the iPhone stream.
+- **What changed:** Added build-time Raspberry Pi address configuration, a one-shot UDP command sender, a full-pane tap gesture, brief success or error feedback, and unit/UI coverage.
+- **Important implementation details:** Xcode includes `PI_IP` from the Git-ignored repository `.env` in the generated app Info.plist. Each tap independently sends the exact bytes `CAPTURE` to UDP port 5001; the confirmation indicates local network handoff rather than Raspberry Pi acknowledgement.
+- **Verification performed:** The Simulator Debug build passed along with all 12 unit tests and the full-screen tap UI test on the iPhone 13 Pro Simulator running iOS 26.5. An unsigned generic-iPhone Debug build passed. Python syntax compilation and all 14 sender tests also passed.
+- **Known limitations:** Changing `PI_IP` requires rebuilding the app. UDP delivery is unacknowledged, and physical iPhone-to-Raspberry Pi capture still requires hardware verification.
+- **Relevant Swift concepts:** `NWConnection` provides a dependency-free UDP client. SwiftUI state drives the transient feedback overlay, and a generation identifier prevents an older delay from hiding newer tap feedback.
+
 ## Save synchronized pairs on UDP capture commands
 
 - **Commit:** `Save synchronized pairs on UDP capture commands`

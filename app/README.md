@@ -1,6 +1,6 @@
 # Stream
 
-Stream is a landscape-right-only iPhone application that displays the 1280×560 H.264/MPEG-TS composite produced by `scripts/camera_sender_two_cameras.py` and received on UDP port 5000. The complete side-by-side camera image and its burned-in telemetry footer are shown aspect-fit, with black letterboxing when the screen has a different aspect ratio.
+Stream is a landscape-right-only iPhone application that displays the 1280×560 H.264/MPEG-TS composite produced by `scripts/camera_sender_two_cameras.py` and received on UDP port 5000. The complete side-by-side camera image and its burned-in telemetry footer are shown aspect-fit, with black letterboxing when the screen has a different aspect ratio. Tapping the stream sends `CAPTURE` to the Raspberry Pi on UDP port 5001.
 
 ## Requirements
 
@@ -58,12 +58,15 @@ The Xcode project links this generated framework as a static library. Re-run the
 
    ```text
    MAC_IP=<iphone-wifi-ip>
+   PI_IP=<raspberry-pi-wifi-ip>
    PORT=5000
    ```
 
 6. Run Stream from Xcode. Accept the Local Network permission prompt and leave the app active.
 7. From the repository root, start `python3 scripts/camera_sender_two_cameras.py` using the sender's existing Python environment.
 
-The status should move through listening or reconnecting and then disappear when playback begins. Both camera images and the complete telemetry footer should remain visible. Stream stops its receiver when sent to the background and starts listening again when it becomes active.
+The status should move through listening or reconnecting and then disappear when playback begins. Both camera images and the complete telemetry footer should remain visible. Tap anywhere on the stream to send a capture request; a brief “CAPTURE sent” message confirms local UDP handoff, while the Raspberry Pi saves the next synchronized raw pair under `data/batch_NNN`. Stream stops its receiver when sent to the background and starts listening again when it becomes active.
+
+Xcode reads `PI_IP` from the repository `.env` at build time. Rebuild and reinstall Stream after changing that address. UDP does not acknowledge remote delivery, so confirm captures on the Raspberry Pi when diagnosing the connection.
 
 If no video appears, confirm both devices are on the same Wi-Fi network, recheck the iPhone address in `.env`, verify UDP port 5000 is not blocked, and start the app before the sender.

@@ -1,0 +1,3 @@
+#include? "../.env"
+
+INFOPLIST_FILE = Stream/Info.plist

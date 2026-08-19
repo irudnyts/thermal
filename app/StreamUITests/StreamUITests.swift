@@ -19,5 +19,11 @@ final class StreamUITests: XCTestCase {
             app.windows.firstMatch.frame.width,
             app.windows.firstMatch.frame.height
         )
+
+        primaryPane.tap()
+        XCTAssertTrue(
+            app.staticTexts["captureStatus"].waitForExistence(timeout: 3)
+        )
+        XCTAssertEqual(app.staticTexts["captureStatus"].label, "CAPTURE sent")
     }
 }

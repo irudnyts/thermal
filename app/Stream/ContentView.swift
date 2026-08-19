@@ -3,6 +3,10 @@ import SwiftUI
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var streamModel = CameraStreamModel()
+    @State private var captureStatus: String?
+    @State private var captureStatusID = UUID()
+
+    private let captureSender = CaptureCommandSender()
 
     var body: some View {
         CameraPane(
@@ -12,6 +16,22 @@ struct ContentView: View {
             status: streamModel.state == .playing ? nil : streamModel.statusText
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            sendCaptureCommand()
+        }
+        .overlay(alignment: .top) {
+            if let captureStatus {
+                Text(captureStatus)
+                    .font(.footnote.monospaced())
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(.black.opacity(0.65), in: Capsule())
+                    .padding(12)
+                    .accessibilityIdentifier("captureStatus")
+            }
+        }
         .background(Color.black.ignoresSafeArea())
         .onAppear {
             updateStreaming(for: scenePhase)
@@ -21,6 +41,30 @@ struct ContentView: View {
         }
         .onDisappear {
             streamModel.stop()
+            captureStatus = nil
+        }
+    }
+
+    private func sendCaptureCommand() {
+        captureSender.send { result in
+            switch result {
+            case .success:
+                showCaptureStatus("CAPTURE sent")
+            case .failure(let error):
+                showCaptureStatus(error.localizedDescription)
+            }
+        }
+    }
+
+    private func showCaptureStatus(_ status: String) {
+        let statusID = UUID()
+        captureStatusID = statusID
+        captureStatus = status
+
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            guard captureStatusID == statusID else { return }
+            captureStatus = nil
         }
     }
 

@@ -1,3 +1,4 @@
+import Network
 import XCTest
 @testable import Stream
 
@@ -20,6 +21,66 @@ final class StreamTests: XCTestCase {
         )
 
         XCTAssertFalse(description.isEmpty)
+    }
+
+    func testRaspberryPiAddressIsIncludedAtBuildTime() throws {
+        let host = try XCTUnwrap(
+            Bundle.main.object(forInfoDictionaryKey: "RaspberryPiHost") as? String
+        )
+
+        XCTAssertFalse(host.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        XCTAssertNotEqual(host, "$(PI_IP)")
+    }
+
+    func testCaptureCommandUsesExpectedPayloadAndPort() {
+        XCTAssertEqual(CaptureCommandSender.port.rawValue, 5001)
+        XCTAssertEqual(CaptureCommandSender.command, Data("CAPTURE".utf8))
+    }
+
+    func testCaptureCommandReachesLocalUDPListener() throws {
+        let listenerReady = expectation(description: "UDP listener ready")
+        let commandReceived = expectation(description: "CAPTURE received")
+        let sendCompleted = expectation(description: "UDP send completed")
+        let queue = DispatchQueue(label: "CaptureCommandSenderTests")
+        let listener = try NWListener(using: .udp, on: .any)
+        var receivedData: Data?
+
+        listener.newConnectionHandler = { connection in
+            connection.start(queue: queue)
+            connection.receiveMessage { data, _, _, _ in
+                receivedData = data
+                commandReceived.fulfill()
+                connection.cancel()
+            }
+        }
+        listener.stateUpdateHandler = { state in
+            guard case .ready = state, let port = listener.port else { return }
+            listenerReady.fulfill()
+            CaptureCommandSender(host: " \"127.0.0.1\" ", port: port).send { result in
+                if case .failure(let error) = result {
+                    XCTFail(error.localizedDescription)
+                }
+                sendCompleted.fulfill()
+            }
+        }
+        listener.start(queue: queue)
+
+        wait(for: [listenerReady, commandReceived, sendCompleted], timeout: 3)
+        listener.cancel()
+        XCTAssertEqual(receivedData, Data("CAPTURE".utf8))
+    }
+
+    func testCaptureCommandReportsMissingHost() {
+        let failed = expectation(description: "Missing host reported")
+
+        CaptureCommandSender(host: "  ").send { result in
+            guard case .failure(.missingHost) = result else {
+                return XCTFail("Expected missing-host failure")
+            }
+            failed.fulfill()
+        }
+
+        wait(for: [failed], timeout: 1)
     }
 
     func testFFmpegVersion() {
