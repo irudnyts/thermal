@@ -1,6 +1,7 @@
 .env
 .vscode
 .venv
+data/
 xcuserdata/
 app/Vendor/FFmpeg/.build/
 app/Vendor/FFmpeg/FFmpeg.xcframework/

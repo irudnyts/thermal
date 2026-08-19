@@ -1,5 +1,15 @@
 # Implementation log
 
+## Save synchronized pairs on UDP capture commands
+
+- **Commit:** `Save synchronized pairs on UDP capture commands`
+- **Intent:** Record an overlay-free visible and thermal image pair when the Raspberry Pi receives the iPhone's capture command.
+- **What changed:** Added a non-blocking UDP listener on port 5001, exact `CAPTURE` command counting, per-launch batch allocation, numbered pair saving, failure cleanup, and Git exclusion for runtime capture data.
+- **Important implementation details:** Each command consumes the next synchronized pair before resizing, concatenation, or telemetry rendering. Both frames are encoded to temporary PNGs before their final names are published; failed pairs are removed and do not advance the image number.
+- **Verification performed:** Python syntax compilation succeeded. All 14 focused unit tests passed, including batch allocation, exact command filtering, raw-frame selection, multiple pending requests, failed-pair cleanup, streaming continuity, and socket shutdown.
+- **Known limitations:** UDP provides no delivery acknowledgement or authentication. Physical camera capture and filesystem behavior still require Raspberry Pi verification.
+- **Relevant Python concepts:** A non-blocking socket lets the existing synchronization loop poll for commands without adding another thread. Temporary files prevent a failed PNG encode from leaving a normal-looking incomplete pair.
+
 ## Display the composite stream in landscape
 
 - **Commit:** `Display the composite stream in landscape`

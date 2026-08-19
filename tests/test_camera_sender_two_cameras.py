@@ -1,6 +1,7 @@
 import importlib.util
 import os
 import sys
+import tempfile
 import types
 import unittest
 from pathlib import Path
@@ -19,10 +20,14 @@ class FakeCV2(types.ModuleType):
     LINE_AA = 16
     BORDER_CONSTANT = 0
     CAP_V4L2 = 200
+    error = RuntimeError
 
     def __init__(self):
         super().__init__("cv2")
         self.rendered_text = []
+        self.written_images = []
+        self.failed_image_suffix = None
+        self.wait_key_results = []
 
     def copyMakeBorder(self, frame, top, bottom, left, right, border_type, value):
         height, width, channels = frame.shape
@@ -50,10 +55,19 @@ class FakeCV2(types.ModuleType):
         return None
 
     def waitKey(self, delay):
+        if self.wait_key_results:
+            return self.wait_key_results.pop(0)
         return ord("q")
 
     def destroyAllWindows(self):
         return None
+
+    def imwrite(self, path, frame):
+        self.written_images.append((path, frame))
+        if self.failed_image_suffix and path.endswith(self.failed_image_suffix):
+            return False
+        Path(path).write_bytes(b"png")
+        return True
 
 
 def make_fake_av(fail_to_add_stream=False):
@@ -255,17 +269,97 @@ class UDPVideoSenderTests(unittest.TestCase):
         fake_av.container.close.assert_called_once_with()
 
 
+class CaptureStorageTests(unittest.TestCase):
+    def setUp(self):
+        self.fake_cv2 = FakeCV2()
+        self.camera_script = load_camera_script(self.fake_cv2)
+
+    def test_creates_next_batch_directory_without_overwriting_existing_batches(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            data_directory = Path(temporary_directory) / "data"
+            (data_directory / "batch_002").mkdir(parents=True)
+            (data_directory / "batch_010").mkdir()
+            (data_directory / "notes").mkdir()
+
+            result = self.camera_script.create_batch_directory(data_directory)
+
+            self.assertEqual(result, data_directory / "batch_011")
+            self.assertTrue(result.is_dir())
+
+    def test_creates_data_and_first_batch_when_they_do_not_exist(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            data_directory = Path(temporary_directory) / "missing" / "data"
+
+            result = self.camera_script.create_batch_directory(data_directory)
+
+            self.assertEqual(result, data_directory / "batch_000")
+            self.assertTrue(result.is_dir())
+
+    def test_counts_only_exact_capture_messages(self):
+        capture_socket = MagicMock()
+        capture_socket.recvfrom.side_effect = [
+            (b"CAPTURE", ("192.0.2.1", 1234)),
+            (b"capture", ("192.0.2.1", 1234)),
+            (b"CAPTURE\n", ("192.0.2.1", 1234)),
+            (b"CAPTURE", ("192.0.2.1", 1234)),
+            BlockingIOError,
+        ]
+
+        result = self.camera_script.receive_capture_requests(capture_socket)
+
+        self.assertEqual(result, 2)
+
+    def test_saves_numbered_pair_from_the_supplied_raw_frames(self):
+        pi_frame = np.full((480, 640, 3), 10, dtype=np.uint8)
+        thermal_frame = np.full((120, 160, 3), 20, dtype=np.uint8)
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            batch_directory = Path(temporary_directory)
+
+            result = self.camera_script.save_capture_pair(
+                batch_directory,
+                7,
+                pi_frame,
+                thermal_frame,
+            )
+
+            self.assertTrue(result)
+            self.assertTrue((batch_directory / "0007_rgb.png").is_file())
+            self.assertTrue((batch_directory / "0007_trm.png").is_file())
+            self.assertIs(self.fake_cv2.written_images[0][1], pi_frame)
+            self.assertIs(self.fake_cv2.written_images[1][1], thermal_frame)
+
+    def test_removes_partial_output_when_either_image_cannot_be_written(self):
+        self.fake_cv2.failed_image_suffix = "_trm.tmp.png"
+
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            batch_directory = Path(temporary_directory)
+
+            result = self.camera_script.save_capture_pair(
+                batch_directory,
+                0,
+                np.zeros((2, 2, 3), dtype=np.uint8),
+                np.zeros((1, 1, 3), dtype=np.uint8),
+            )
+
+            self.assertFalse(result)
+            self.assertEqual(list(batch_directory.iterdir()), [])
+
+
 class MainTests(unittest.TestCase):
-    def test_sends_composite_frame_and_closes_sender(self):
+    def test_sends_composite_and_saves_pending_raw_pairs(self):
         fake_cv2 = FakeCV2()
+        fake_cv2.wait_key_results = [0, ord("q")]
         camera_script = load_camera_script(fake_cv2)
         pi_frame = np.full((480, 640, 3), 10, dtype=np.uint8)
-        thermal_frame = np.full((480, 640, 3), 20, dtype=np.uint8)
+        thermal_frame = np.full((120, 160, 3), 20, dtype=np.uint8)
         pi_frames = MagicMock()
         thermal_frames = MagicMock()
         pi_frames.get.return_value = (10.0, pi_frame, 29.8)
         thermal_frames.get.return_value = (10.01, thermal_frame, 29.7)
         sender = MagicMock()
+        capture_socket = MagicMock()
+        save_capture_pair = MagicMock(return_value=True)
         threads = [MagicMock(), MagicMock()]
 
         with (
@@ -282,6 +376,26 @@ class MainTests(unittest.TestCase):
             ) as sender_type,
             patch.object(
                 camera_script,
+                "create_batch_directory",
+                return_value=Path("data/batch_000"),
+            ),
+            patch.object(
+                camera_script,
+                "create_capture_socket",
+                return_value=capture_socket,
+            ),
+            patch.object(
+                camera_script,
+                "receive_capture_requests",
+                side_effect=[2, 0],
+            ),
+            patch.object(
+                camera_script,
+                "save_capture_pair",
+                save_capture_pair,
+            ),
+            patch.object(
+                camera_script,
                 "Queue",
                 side_effect=[pi_frames, thermal_frames],
             ),
@@ -295,12 +409,18 @@ class MainTests(unittest.TestCase):
 
         load_dotenv.assert_called_once_with()
         sender_type.assert_called_once_with("192.0.2.1", 5000, (1280, 560))
-        sender.send.assert_called_once()
-        streamed_frame = sender.send.call_args.args[0]
+        self.assertEqual(sender.send.call_count, 2)
+        streamed_frame = sender.send.call_args_list[0].args[0]
         self.assertEqual(streamed_frame.shape, (560, 1280, 3))
         np.testing.assert_array_equal(streamed_frame[:480, :640], pi_frame)
         self.assertFalse(streamed_frame[480:].any())
+        self.assertEqual(save_capture_pair.call_count, 2)
+        for image_number, call in enumerate(save_capture_pair.call_args_list):
+            self.assertEqual(call.args[1], image_number)
+            self.assertIs(call.args[2], pi_frame)
+            self.assertIs(call.args[3], thermal_frame)
         sender.close.assert_called_once_with()
+        capture_socket.close.assert_called_once_with()
         for thread in threads:
             thread.start.assert_called_once_with()
             thread.join.assert_called_once_with()

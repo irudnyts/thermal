@@ -1,8 +1,11 @@
 import os
+import re
+import socket
 import threading
 import time
 from collections import deque
 from fractions import Fraction
+from pathlib import Path
 from queue import Empty, Full, Queue
 
 import av
@@ -25,6 +28,10 @@ TEXT_THICKNESS = 1
 TEXT_COLOR = (255, 255, 255)
 STREAM_BIT_RATE = 2_000_000
 STREAM_PACKET_SIZE = 1316
+CAPTURE_COMMAND = b"CAPTURE"
+CAPTURE_PORT = 5001
+DATA_DIRECTORY = Path("data")
+BATCH_DIRECTORY_PATTERN = re.compile(r"batch_(\d+)")
 
 
 class UDPVideoSender:
@@ -195,6 +202,70 @@ def put_latest(frames, item):
             pass
 
 
+def create_batch_directory(data_directory=DATA_DIRECTORY):
+    data_directory.mkdir(parents=True, exist_ok=True)
+    batch_numbers = [
+        int(match.group(1))
+        for path in data_directory.iterdir()
+        if path.is_dir()
+        if (match := BATCH_DIRECTORY_PATTERN.fullmatch(path.name)) is not None
+    ]
+    batch_number = max(batch_numbers, default=-1) + 1
+    batch_directory = data_directory / f"batch_{batch_number:03d}"
+    batch_directory.mkdir()
+    return batch_directory
+
+
+def create_capture_socket(port=CAPTURE_PORT):
+    capture_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    capture_socket.bind(("0.0.0.0", port))
+    capture_socket.setblocking(False)
+    return capture_socket
+
+
+def receive_capture_requests(capture_socket):
+    request_count = 0
+
+    while True:
+        try:
+            message, _ = capture_socket.recvfrom(1024)
+        except BlockingIOError:
+            return request_count
+
+        if message == CAPTURE_COMMAND:
+            request_count += 1
+
+
+def save_capture_pair(batch_directory, image_number, pi_frame, thermal_frame):
+    prefix = f"{image_number:04d}"
+    rgb_path = batch_directory / f"{prefix}_rgb.png"
+    thermal_path = batch_directory / f"{prefix}_trm.png"
+    rgb_temporary_path = batch_directory / f".{prefix}_rgb.tmp.png"
+    thermal_temporary_path = batch_directory / f".{prefix}_trm.tmp.png"
+
+    try:
+        rgb_written = cv2.imwrite(str(rgb_temporary_path), pi_frame)
+        thermal_written = cv2.imwrite(str(thermal_temporary_path), thermal_frame)
+        if not rgb_written or not thermal_written:
+            raise OSError("OpenCV could not encode both PNG files")
+
+        os.replace(rgb_temporary_path, rgb_path)
+        os.replace(thermal_temporary_path, thermal_path)
+    except (OSError, cv2.error) as error:
+        for path in (
+            rgb_temporary_path,
+            thermal_temporary_path,
+            rgb_path,
+            thermal_path,
+        ):
+            path.unlink(missing_ok=True)
+        print(f"Cannot save capture {prefix}: {error}")
+        return False
+
+    print(f"Saved capture {prefix} in {batch_directory}")
+    return True
+
+
 def capture_pi_camera(frames, stop_event):
     picam2 = None
     fps = RollingFPS()
@@ -248,6 +319,13 @@ def main():
     host = os.environ["MAC_IP"]
     port = int(os.environ["PORT"])
     sender = UDPVideoSender(host, port, STREAM_FRAME_SIZE)
+    batch_directory = create_batch_directory()
+
+    try:
+        capture_socket = create_capture_socket()
+    except Exception:
+        sender.close()
+        raise
 
     pi_frames = Queue(maxsize=QUEUE_SIZE)
     thermal_frames = Queue(maxsize=QUEUE_SIZE)
@@ -267,9 +345,13 @@ def main():
     pi_item = None
     thermal_item = None
     synchronized_fps = RollingFPS()
+    pending_captures = 0
+    image_number = 0
 
     try:
         while not stop_event.is_set():
+            pending_captures += receive_capture_requests(capture_socket)
+
             try:
                 if pi_item is None:
                     pi_item = pi_frames.get(timeout=0.1)
@@ -282,6 +364,16 @@ def main():
 
             if abs(time_difference) <= MAX_TIME_DIFFERENCE:
                 pair_fps = synchronized_fps.add(time.monotonic())
+                if pending_captures > 0:
+                    if save_capture_pair(
+                        batch_directory,
+                        image_number,
+                        pi_item[1],
+                        thermal_item[1],
+                    ):
+                        image_number += 1
+                    pending_captures -= 1
+
                 thermal_frame = cv2.resize(thermal_item[1], FRAME_SIZE)
                 combined_frame = cv2.hconcat([pi_item[1], thermal_frame])
                 display_frame = add_telemetry_footer(
@@ -308,6 +400,7 @@ def main():
         stop_event.set()
         for thread in threads:
             thread.join()
+        capture_socket.close()
         sender.close()
         cv2.destroyAllWindows()
 
