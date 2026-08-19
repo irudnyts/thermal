@@ -1,5 +1,15 @@
 # Implementation log
 
+## Add two-camera FPS and synchronization telemetry
+
+- **Commit:** `Add two-camera FPS and synchronization telemetry`
+- **Intent:** Show the actual capture speed of each camera and the rate and timing quality of synchronized frame pairs.
+- **What changed:** Added independent one-second rolling FPS measurements to both capture threads, an accepted-pair FPS measurement to the synchronization loop, and a black OpenCV footer below the side-by-side preview. The footer shows each camera's FPS, synchronized FPS, and the signed Pi-minus-thermal timestamp difference in milliseconds.
+- **Important implementation details:** FPS values travel with their captured frames, avoiding shared mutable counters between threads. OpenCV adds and draws the footer with `copyMakeBorder`, `getTextSize`, and anti-aliased `putText`; text is centered beneath the relevant stream. The script now starts through a `main()` function so its calculation and rendering helpers can be imported without starting camera threads.
+- **Verification performed:** Python syntax compilation succeeded. Three deterministic unit tests passed for FPS warmup, rolling-window expiration, footer dimensions, black footer pixels, formatted values, and text placement. OpenCV and Picamera2 are unavailable in the local environment, so the tests use narrow fakes and hardware rendering remains to be checked on the Raspberry Pi.
+- **Known limitations:** Metrics appear only in the local preview. The first sample displays `--`, the synchronization error describes only the current accepted pair, and hardware camera behavior has not been verified locally.
+- **Relevant Python concepts:** A `deque` efficiently removes timestamps that leave the rolling window. A `main()` guard prevents hardware startup when another module imports this script for testing.
+
 ## Add minimal synchronized two-camera display
 
 - **Commit:** `Add minimal synchronized two-camera display`
