@@ -1,5 +1,15 @@
 # Implementation log
 
+## Add minimal synchronized two-camera display
+
+- **Commit:** `Add minimal synchronized two-camera display`
+- **Intent:** Show Raspberry Pi and thermal camera images together with close capture times.
+- **What changed:** Added a standalone script that captures both cameras on separate threads, timestamps frames with a monotonic clock, drops old queued frames, pairs frames within 50 milliseconds, and displays them side by side at 1280×480.
+- **Important implementation details:** Each camera uses a two-frame bounded queue to limit latency. The main loop discards the older candidate until the timestamps are close enough. Pressing `q`, `Ctrl+C`, or encountering a camera error stops both capture loops and releases their resources.
+- **Verification performed:** Python syntax compilation succeeded. Hardware capture and display require verification on the Raspberry Pi with both cameras attached.
+- **Known limitations:** Camera indices, resolution, frame rate, and synchronization tolerance are fixed constants. The script displays locally and does not send UDP video.
+- **Relevant Python concepts:** Threads let the two blocking camera APIs capture independently, while thread-safe queues transfer timestamped frames to the display loop.
+
 ## Configure the Apple development team
 
 - **Commit:** `Configure the Apple development team`
