@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 from collections import deque
@@ -7,6 +8,7 @@ from queue import Empty, Full, Queue
 import av
 import cv2
 from picamera2 import Picamera2
+from dotenv import load_dotenv
 
 
 FRAME_SIZE = (640, 480)
@@ -16,6 +18,7 @@ MAX_TIME_DIFFERENCE = 0.050
 QUEUE_SIZE = 2
 FPS_WINDOW_SECONDS = 1.0
 FOOTER_HEIGHT = 80
+STREAM_FRAME_SIZE = (FRAME_SIZE[0] * 2, FRAME_SIZE[1] + FOOTER_HEIGHT)
 TEXT_FONT = cv2.FONT_HERSHEY_SIMPLEX
 TEXT_SCALE = 0.6
 TEXT_THICKNESS = 1
@@ -241,6 +244,11 @@ def capture_thermal_camera(frames, stop_event):
 
 
 def main():
+    load_dotenv()
+    host = os.environ["MAC_IP"]
+    port = int(os.environ["PORT"])
+    sender = UDPVideoSender(host, port, STREAM_FRAME_SIZE)
+
     pi_frames = Queue(maxsize=QUEUE_SIZE)
     thermal_frames = Queue(maxsize=QUEUE_SIZE)
     stop_event = threading.Event()
@@ -283,6 +291,7 @@ def main():
                     pair_fps,
                     time_difference,
                 )
+                sender.send(display_frame)
                 cv2.imshow("Pi and Thermal Cameras", display_frame)
                 pi_item = None
                 thermal_item = None
@@ -299,6 +308,7 @@ def main():
         stop_event.set()
         for thread in threads:
             thread.join()
+        sender.close()
         cv2.destroyAllWindows()
 
 

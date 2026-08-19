@@ -1,5 +1,15 @@
 # Implementation log
 
+## Stream the synchronized two-camera composite
+
+- **Commit:** `Stream the synchronized two-camera composite`
+- **Intent:** Send the side-by-side camera image and its burned-in telemetry footer to the iPhone over the existing UDP video protocol.
+- **What changed:** Connected the OpenCV-frame encoder to the synchronized capture loop, loaded the destination from `MAC_IP` and `PORT`, sent each accepted 1280×560 composite before displaying it locally, and closed the sender during shutdown.
+- **Important implementation details:** Encoding happens after the telemetry footer is drawn, so the statistics are video pixels rather than a separate app overlay. The sender is created before camera threads start, and the existing cleanup path now stops the threads, flushes the encoder, and closes the preview for normal exit, interruption, and streaming failures.
+- **Verification performed:** Python syntax compilation and the focused unit-test suite passed, including an integration-style test that runs the main loop with fake cameras and confirms the complete 1280×560 frame is sent and the sender is closed.
+- **Known limitations:** Physical camera capture, Raspberry Pi encoding performance, network delivery, and iPhone playback still require hardware verification. The destination remains configured through `.env`.
+- **Relevant Python concepts:** A `finally` block performs cleanup even when encoding or transmission raises an exception. Environment variables keep the receiver address outside the source code.
+
 ## Add an OpenCV-frame UDP encoder
 
 - **Commit:** `Add an OpenCV-frame UDP encoder`

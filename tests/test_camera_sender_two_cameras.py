@@ -1,4 +1,5 @@
 import importlib.util
+import os
 import sys
 import types
 import unittest
@@ -39,6 +40,21 @@ class FakeCV2(types.ModuleType):
         self.rendered_text.append((text, origin))
         return frame
 
+    def resize(self, frame, size):
+        return np.resize(frame, (size[1], size[0], frame.shape[2]))
+
+    def hconcat(self, frames):
+        return np.concatenate(frames, axis=1)
+
+    def imshow(self, title, frame):
+        return None
+
+    def waitKey(self, delay):
+        return ord("q")
+
+    def destroyAllWindows(self):
+        return None
+
 
 def make_fake_av(fail_to_add_stream=False):
     fake_av = types.ModuleType("av")
@@ -70,12 +86,19 @@ def load_camera_script(fake_cv2, fake_av=None):
         fake_av = make_fake_av()
     fake_picamera2 = types.ModuleType("picamera2")
     fake_picamera2.Picamera2 = object
+    fake_dotenv = types.ModuleType("dotenv")
+    fake_dotenv.load_dotenv = MagicMock()
     spec = importlib.util.spec_from_file_location("camera_sender_two_cameras", SCRIPT_PATH)
     module = importlib.util.module_from_spec(spec)
 
     with patch.dict(
         sys.modules,
-        {"av": fake_av, "cv2": fake_cv2, "picamera2": fake_picamera2},
+        {
+            "av": fake_av,
+            "cv2": fake_cv2,
+            "dotenv": fake_dotenv,
+            "picamera2": fake_picamera2,
+        },
     ):
         spec.loader.exec_module(module)
 
@@ -230,6 +253,57 @@ class UDPVideoSenderTests(unittest.TestCase):
             camera_script.UDPVideoSender("192.0.2.1", 5000, (1280, 560))
 
         fake_av.container.close.assert_called_once_with()
+
+
+class MainTests(unittest.TestCase):
+    def test_sends_composite_frame_and_closes_sender(self):
+        fake_cv2 = FakeCV2()
+        camera_script = load_camera_script(fake_cv2)
+        pi_frame = np.full((480, 640, 3), 10, dtype=np.uint8)
+        thermal_frame = np.full((480, 640, 3), 20, dtype=np.uint8)
+        pi_frames = MagicMock()
+        thermal_frames = MagicMock()
+        pi_frames.get.return_value = (10.0, pi_frame, 29.8)
+        thermal_frames.get.return_value = (10.01, thermal_frame, 29.7)
+        sender = MagicMock()
+        threads = [MagicMock(), MagicMock()]
+
+        with (
+            patch.dict(
+                os.environ,
+                {"MAC_IP": "192.0.2.1", "PORT": "5000"},
+                clear=True,
+            ),
+            patch.object(camera_script, "load_dotenv") as load_dotenv,
+            patch.object(
+                camera_script,
+                "UDPVideoSender",
+                return_value=sender,
+            ) as sender_type,
+            patch.object(
+                camera_script,
+                "Queue",
+                side_effect=[pi_frames, thermal_frames],
+            ),
+            patch.object(
+                camera_script.threading,
+                "Thread",
+                side_effect=threads,
+            ),
+        ):
+            camera_script.main()
+
+        load_dotenv.assert_called_once_with()
+        sender_type.assert_called_once_with("192.0.2.1", 5000, (1280, 560))
+        sender.send.assert_called_once()
+        streamed_frame = sender.send.call_args.args[0]
+        self.assertEqual(streamed_frame.shape, (560, 1280, 3))
+        np.testing.assert_array_equal(streamed_frame[:480, :640], pi_frame)
+        self.assertFalse(streamed_frame[480:].any())
+        sender.close.assert_called_once_with()
+        for thread in threads:
+            thread.start.assert_called_once_with()
+            thread.join.assert_called_once_with()
 
 
 if __name__ == "__main__":
