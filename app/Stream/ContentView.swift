@@ -5,22 +5,13 @@ struct ContentView: View {
     @StateObject private var streamModel = CameraStreamModel()
 
     var body: some View {
-        VStack(spacing: 0) {
-            CameraPane(
-                accessibilityLabel: "Primary camera",
-                accessibilityIdentifier: "primaryCameraPane",
-                image: streamModel.frame,
-                status: streamModel.statusText
-            )
-
-            CameraPane(
-                accessibilityLabel: "Secondary camera",
-                accessibilityIdentifier: "secondaryCameraPane"
-            )
-
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        CameraPane(
+            accessibilityLabel: "Two-camera stream",
+            accessibilityIdentifier: "primaryCameraPane",
+            image: streamModel.frame,
+            status: streamModel.state == .playing ? nil : streamModel.statusText
+        )
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color.black.ignoresSafeArea())
         .onAppear {
             updateStreaming(for: scenePhase)
@@ -82,8 +73,7 @@ private struct CameraPane: View {
                     .accessibilityIdentifier("streamStatus")
             }
         }
-        .aspectRatio(4.0 / 3.0, contentMode: .fit)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .clipped()
         .accessibilityElement(children: .contain)
         .accessibilityLabel(accessibilityLabel)

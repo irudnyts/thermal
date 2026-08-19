@@ -1,6 +1,6 @@
 # Stream
 
-Stream is an iPhone application that displays a 640×480 H.264/MPEG-TS camera stream received on UDP port 5000. The decoded primary stream is shown aspect-fit in the upper pane; the lower pane remains black and reserved for a future secondary camera.
+Stream is a landscape-right-only iPhone application that displays the 1280×560 H.264/MPEG-TS composite produced by `scripts/camera_sender_two_cameras.py` and received on UDP port 5000. The complete side-by-side camera image and its burned-in telemetry footer are shown aspect-fit, with black letterboxing when the screen has a different aspect ratio.
 
 ## Requirements
 
@@ -18,7 +18,7 @@ Install Xcode from the Mac App Store or [Apple Developer downloads](https://deve
 3. Select the iPhone 13 Pro Simulator.
 4. Choose **Product > Run**.
 
-The app opens in portrait and displays two equal, black 4:3 panes. The upper pane says “Listening on UDP 5000”.
+The app opens in landscape right and displays one black stream area with “Listening on UDP 5000”. Listening, reconnecting, and error statuses remain visible; the app hides its status while video is playing so it does not cover the sender's telemetry.
 
 The iPhone 13 Pro is the project's reference device. The app remains compatible with other iPhones running iOS 17 or newer.
 
@@ -54,7 +54,7 @@ The Xcode project links this generated framework as a static library. Re-run the
 2. Select the `Stream` target, open **Signing & Capabilities**, and choose your Personal Team.
 3. Connect the iPhone to the Mac, enable Developer Mode when prompted, and select that iPhone as Xcode's run destination.
 4. On the iPhone, open **Settings > Wi-Fi**, tap the information button beside the connected network, and note the iPhone's IPv4 address.
-5. Configure `collect/.env` on the Raspberry Pi:
+5. Configure `.env` in the repository root on the Raspberry Pi:
 
    ```text
    MAC_IP=<iphone-wifi-ip>
@@ -62,8 +62,8 @@ The Xcode project links this generated framework as a static library. Re-run the
    ```
 
 6. Run Stream from Xcode. Accept the Local Network permission prompt and leave the app active.
-7. Start `collect/camera_sender.py` using the sender's existing Python environment.
+7. From the repository root, start `python3 scripts/camera_sender_two_cameras.py` using the sender's existing Python environment.
 
-The upper pane should move through listening or reconnecting to playing and show video within approximately three seconds. Stream stops its receiver when sent to the background and starts listening again when it becomes active. The lower pane remains black.
+The status should move through listening or reconnecting and then disappear when playback begins. Both camera images and the complete telemetry footer should remain visible. Stream stops its receiver when sent to the background and starts listening again when it becomes active.
 
-If no video appears, confirm both devices are on the same Wi-Fi network, recheck the iPhone address in `collect/.env`, verify UDP port 5000 is not blocked, and start the app before the sender.
+If no video appears, confirm both devices are on the same Wi-Fi network, recheck the iPhone address in `.env`, verify UDP port 5000 is not blocked, and start the app before the sender.

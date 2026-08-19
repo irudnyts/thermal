@@ -1,5 +1,15 @@
 # Implementation log
 
+## Display the composite stream in landscape
+
+- **Commit:** `Display the composite stream in landscape`
+- **Intent:** Present the complete two-camera video and burned-in telemetry as one unobstructed landscape stream on iPhone.
+- **What changed:** Replaced the portrait two-pane layout with one full-available-area aspect-fit stream, locked the app to landscape right, hid the app status during playback, updated orientation and layout tests, and documented operation with the two-camera sender.
+- **Important implementation details:** The decoder continues to use each frame's native dimensions, so no transport or decoding changes are required for 1280×560 input. SwiftUI preserves the complete image and uses the existing black background as letterboxing; lifecycle-driven receiver start and stop behavior is unchanged.
+- **Verification performed:** The arm64 Simulator Debug build passed. All eight unit tests and the landscape layout UI test passed on the iPhone 13 Pro Simulator running iOS 26.5. An unsigned generic-iPhone Debug build passed, and its generated Info.plist contains only `UIInterfaceOrientationLandscapeRight` for iPhone.
+- **Known limitations:** Physical Raspberry Pi-to-iPhone playback still requires hardware verification. Only `UIInterfaceOrientationLandscapeRight` is supported.
+- **Relevant Swift concepts:** A conditional expression passes no status view while the model is playing. SwiftUI's aspect-fit image rendering scales a frame without cropping or changing its proportions.
+
 ## Stream the synchronized two-camera composite
 
 - **Commit:** `Stream the synchronized two-camera composite`
