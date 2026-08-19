@@ -1,5 +1,15 @@
 # Implementation log
 
+## Add an OpenCV-frame UDP encoder
+
+- **Commit:** `Add an OpenCV-frame UDP encoder`
+- **Intent:** Provide a small sender that can encode an already-composed OpenCV frame for the iPhone's existing UDP video protocol.
+- **What changed:** Added a PyAV-backed sender that converts fixed-size BGR frames to H.264/YUV420P, muxes them as MPEG-TS, and writes UDP packets using the existing 1316-byte packet size convention.
+- **Important implementation details:** The encoder uses a 2 Mbps bitrate, a 30-frame keyframe interval, repeated headers, no B-frames, and x264's low-latency settings. Frames receive sequential presentation timestamps, and shutdown flushes delayed packets exactly once. Encoder setup failures are reported as a clear runtime error.
+- **Verification performed:** Python syntax compilation succeeded for all four Python scripts. All eight unit tests passed, including encoder configuration, BGR conversion, packet muxing, dimension validation, flushing, idempotent shutdown, and unavailable-encoder reporting. Hardware streaming remains to be checked on the Raspberry Pi.
+- **Known limitations:** The helper is not connected to the synchronized camera loop yet. Hardware encoding availability and performance must be verified on the Raspberry Pi.
+- **Relevant Python concepts:** `Fraction` represents the exact frame time base without floating-point rounding. The sender owns the PyAV container and stream and makes cleanup idempotent so repeated shutdown requests are safe.
+
 ## Add two-camera FPS and synchronization telemetry
 
 - **Commit:** `Add two-camera FPS and synchronization telemetry`

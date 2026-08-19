@@ -3,7 +3,7 @@ import sys
 import types
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 
@@ -40,7 +40,34 @@ class FakeCV2(types.ModuleType):
         return frame
 
 
-def load_camera_script(fake_cv2):
+def make_fake_av(fail_to_add_stream=False):
+    fake_av = types.ModuleType("av")
+    fake_av.container = MagicMock()
+    fake_av.stream = MagicMock()
+    fake_av.stream.codec_context = types.SimpleNamespace()
+    fake_av.stream.encode.side_effect = lambda frame=None: [
+        "flush-packet" if frame is None else "frame-packet"
+    ]
+    if fail_to_add_stream:
+        fake_av.container.add_stream.side_effect = LookupError("libx264")
+    else:
+        fake_av.container.add_stream.return_value = fake_av.stream
+    fake_av.open = MagicMock(return_value=fake_av.container)
+    fake_av.VideoFrame = types.SimpleNamespace()
+    fake_av.VideoFrame.from_ndarray = MagicMock(
+        side_effect=lambda array, format: types.SimpleNamespace(
+            array=array,
+            pixel_format=format,
+            pts=None,
+            time_base=None,
+        )
+    )
+    return fake_av
+
+
+def load_camera_script(fake_cv2, fake_av=None):
+    if fake_av is None:
+        fake_av = make_fake_av()
     fake_picamera2 = types.ModuleType("picamera2")
     fake_picamera2.Picamera2 = object
     spec = importlib.util.spec_from_file_location("camera_sender_two_cameras", SCRIPT_PATH)
@@ -48,7 +75,7 @@ def load_camera_script(fake_cv2):
 
     with patch.dict(
         sys.modules,
-        {"cv2": fake_cv2, "picamera2": fake_picamera2},
+        {"av": fake_av, "cv2": fake_cv2, "picamera2": fake_picamera2},
     ):
         spec.loader.exec_module(module)
 
@@ -110,6 +137,99 @@ class RollingFPSTests(unittest.TestCase):
             ],
             [320, 960, 640],
         )
+
+
+class UDPVideoSenderTests(unittest.TestCase):
+    def setUp(self):
+        self.fake_av = make_fake_av()
+        self.camera_script = load_camera_script(FakeCV2(), self.fake_av)
+
+    def test_configures_low_latency_h264_mpegts_stream(self):
+        sender = self.camera_script.UDPVideoSender(
+            "192.0.2.1",
+            5000,
+            (1280, 560),
+        )
+        stream = self.fake_av.stream
+
+        self.fake_av.open.assert_called_once_with(
+            "udp://192.0.2.1:5000?pkt_size=1316",
+            mode="w",
+            format="mpegts",
+        )
+        self.fake_av.container.add_stream.assert_called_once_with("libx264", rate=30)
+        self.assertEqual((stream.width, stream.height), (1280, 560))
+        self.assertEqual(stream.pix_fmt, "yuv420p")
+        self.assertEqual(stream.bit_rate, 2_000_000)
+        self.assertEqual(stream.gop_size, 30)
+        self.assertEqual(stream.codec_context.max_b_frames, 0)
+        self.assertEqual(
+            stream.codec_context.options,
+            {
+                "preset": "ultrafast",
+                "tune": "zerolatency",
+                "x264-params": "repeat-headers=1",
+            },
+        )
+        sender.close()
+
+    def test_converts_bgr_frame_and_muxes_encoded_packet(self):
+        sender = self.camera_script.UDPVideoSender(
+            "192.0.2.1",
+            5000,
+            (1280, 560),
+        )
+        frame = np.zeros((560, 1280, 3), dtype=np.uint8)
+
+        sender.send(frame)
+
+        converted = self.fake_av.stream.encode.call_args.args[0]
+        self.fake_av.VideoFrame.from_ndarray.assert_called_once_with(
+            frame,
+            format="bgr24",
+        )
+        self.assertIs(converted.array, frame)
+        self.assertEqual(converted.pixel_format, "bgr24")
+        self.assertEqual(converted.pts, 0)
+        self.assertEqual(converted.time_base.numerator, 1)
+        self.assertEqual(converted.time_base.denominator, 30)
+        self.fake_av.container.mux.assert_called_once_with("frame-packet")
+
+    def test_rejects_frame_with_unexpected_dimensions(self):
+        sender = self.camera_script.UDPVideoSender(
+            "192.0.2.1",
+            5000,
+            (1280, 560),
+        )
+
+        with self.assertRaisesRegex(ValueError, "expected BGR frame shape"):
+            sender.send(np.zeros((480, 640, 3), dtype=np.uint8))
+
+        sender.close()
+
+    def test_close_flushes_once_and_prevents_further_sends(self):
+        sender = self.camera_script.UDPVideoSender(
+            "192.0.2.1",
+            5000,
+            (1280, 560),
+        )
+
+        sender.close()
+        sender.close()
+
+        self.fake_av.container.mux.assert_called_once_with("flush-packet")
+        self.fake_av.container.close.assert_called_once_with()
+        with self.assertRaisesRegex(RuntimeError, "sender is closed"):
+            sender.send(np.zeros((560, 1280, 3), dtype=np.uint8))
+
+    def test_reports_unavailable_h264_encoder_and_closes_container(self):
+        fake_av = make_fake_av(fail_to_add_stream=True)
+        camera_script = load_camera_script(FakeCV2(), fake_av)
+
+        with self.assertRaisesRegex(RuntimeError, "cannot start H.264 UDP sender"):
+            camera_script.UDPVideoSender("192.0.2.1", 5000, (1280, 560))
+
+        fake_av.container.close.assert_called_once_with()
 
 
 if __name__ == "__main__":

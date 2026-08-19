@@ -1,8 +1,10 @@
 import threading
 import time
 from collections import deque
+from fractions import Fraction
 from queue import Empty, Full, Queue
 
+import av
 import cv2
 from picamera2 import Picamera2
 
@@ -18,6 +20,71 @@ TEXT_FONT = cv2.FONT_HERSHEY_SIMPLEX
 TEXT_SCALE = 0.6
 TEXT_THICKNESS = 1
 TEXT_COLOR = (255, 255, 255)
+STREAM_BIT_RATE = 2_000_000
+STREAM_PACKET_SIZE = 1316
+
+
+class UDPVideoSender:
+    def __init__(self, host, port, frame_size, frame_rate=FRAME_RATE):
+        self.frame_size = frame_size
+        self.frame_rate = frame_rate
+        self.container = None
+        self.stream = None
+        self.next_pts = 0
+
+        url = f"udp://{host}:{port}?pkt_size={STREAM_PACKET_SIZE}"
+        try:
+            self.container = av.open(url, mode="w", format="mpegts")
+            self.stream = self.container.add_stream("libx264", rate=frame_rate)
+            self.stream.width = frame_size[0]
+            self.stream.height = frame_size[1]
+            self.stream.pix_fmt = "yuv420p"
+            self.stream.bit_rate = STREAM_BIT_RATE
+            self.stream.gop_size = frame_rate
+            self.stream.codec_context.max_b_frames = 0
+            self.stream.codec_context.options = {
+                "preset": "ultrafast",
+                "tune": "zerolatency",
+                "x264-params": "repeat-headers=1",
+            }
+        except Exception as error:
+            if self.container is not None:
+                self.container.close()
+                self.container = None
+            raise RuntimeError(f"cannot start H.264 UDP sender: {error}") from error
+
+    def send(self, frame):
+        if self.container is None:
+            raise RuntimeError("UDP video sender is closed")
+
+        expected_shape = (self.frame_size[1], self.frame_size[0], 3)
+        if frame.shape != expected_shape:
+            raise ValueError(
+                f"expected BGR frame shape {expected_shape}, got {frame.shape}"
+            )
+
+        video_frame = av.VideoFrame.from_ndarray(frame, format="bgr24")
+        video_frame.pts = self.next_pts
+        video_frame.time_base = Fraction(1, self.frame_rate)
+        self.next_pts += 1
+
+        for packet in self.stream.encode(video_frame):
+            self.container.mux(packet)
+
+    def close(self):
+        if self.container is None:
+            return
+
+        container = self.container
+        stream = self.stream
+        self.container = None
+        self.stream = None
+
+        try:
+            for packet in stream.encode():
+                container.mux(packet)
+        finally:
+            container.close()
 
 
 class RollingFPS:
